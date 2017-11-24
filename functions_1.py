@@ -58,8 +58,7 @@ def add_DF():
 		print(new_df.print_me())
 		#adding df to database
 		cursor = connection.cursor()
-		str = "INSERT INTO FuncDep VALUES('"+table_name+"','"+lhs_tmp+"','"+rhs+"')"
-		cursor.execute(str)	
+		cursor.execute('''INSERT INTO FuncDep VALUES (? , ? ,?)''', (table_name, lhs_tmp ,rhs))
 		
 def close():	
 	"""Commits all the changes and closes the connection to the database.
