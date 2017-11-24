@@ -1,5 +1,6 @@
 import sqlite3
 import df
+import functions_2
 #declaration of global variables
 connection=None #connection to the database
 all_dfs=[]  #array of objects of type df, stores all functional dependencies
@@ -10,9 +11,9 @@ def init():
 	"""
 	global connection
 	
-	#user have to enter the name of the database
+	#user has to enter the name of the database
 	database = input("Enter the name of the database : ")
-	#creates a connection with database named database.db
+	#creates a connection with the database
 	connection = sqlite3.connect(database + '.db')
 
 	cursor = connection.cursor()
@@ -33,7 +34,7 @@ def init():
 		lhs=convert_lhs_to_array(raw_data[i][1])
 		rhs=raw_data[i][2]
 		all_dfs.append(df.df(table_name,lhs,rhs))
-	#run the application until user want to quit it
+	#run the application until user wants to quit it
 	runApp()
 	
 def convert_lhs_to_array(lhs):
@@ -108,6 +109,8 @@ def runApp():
 			elif command == "Delete":
 				delete_DF()
 			#elif command == "Modify":
+			elif command == "Show invalid":
+				functions_2.show_all_DF_not_satisfied(all_dfs,connection)
 			elif command == "Exit":
 				running = False
 			

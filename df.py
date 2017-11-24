@@ -1,4 +1,4 @@
-class df:
+class df(object):
 
 	def __init__(self, table_name, lhs, rhs):
 		self.table_name = table_name

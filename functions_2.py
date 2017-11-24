@@ -1,9 +1,24 @@
 import df
 import sqlite3
+import copy
 
-connection = sqlite3.connect('database.db')
-cursor = connection.cursor()
+connection=None
 
+def show_all_DF_not_satisfied(all_dfs, conn):
+	global connection
+	connection=conn
+	not_satisfied=[]
+	for i in range(len(all_dfs)):
+		if(not verify_DF_satisfied(all_dfs[i])):
+			not_satisfied.append(df.df(all_dfs[i].table_name,all_dfs[i].lhs,all_dfs[i].rhs))
+			
+	
+	if(len(not_satisfied)>0):	
+		print("The following DFs are not satisfied:")
+		for i in range(len(not_satisfied)):
+			print(not_satisfied[i].print_me())
+	else:
+		print("All DFs are satisfied")
 def verify_DF_satisfied(df):
 	"""Checks if the DF is satisfied. 
 	   Goes through all the pairs (lhs,rhs) selected from the given table_name
@@ -28,6 +43,8 @@ def verify_DF_satisfied(df):
 		
 	
 	"""
+	global connection
+	cursor = connection.cursor()
 	#reads all the data from columns present in DF
 	str="SELECT "
 	for i in range (len(df.lhs)):
@@ -58,23 +75,7 @@ def search_in_array(array, lhs):
 		if(array[i][:-1]==lhs):
 			return array[i][-1]
 	return None		
-all_dfs=[]
-table_name="employee"
-lhs="name lastname"
-lhs=lhs.split(' ')
-rhs="cubical"
-all_dfs.append(df.df(table_name,lhs,rhs))	
-
-table_name="employee"
-lhs="lastname"
-lhs=lhs.split(' ')
-rhs="name"
-all_dfs.append(df.df(table_name,lhs,rhs))
-
-print(verify_DF_satisfied(all_dfs[0]))
-
-print(verify_DF_satisfied(all_dfs[1]))
-
-
-connection.commit()
-connection.close()	
+	
+	
+	
+	
