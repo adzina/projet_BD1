@@ -10,19 +10,13 @@ def show_all_DF_not_satisfied(all_dfs, conn):
 	not_satisfied=[]
 	for i in range(len(all_dfs)):
 		if(not verify_DF_satisfied(all_dfs[i])):
-			not_satisfied.append(df.df(all_dfs[i].table_name,all_dfs[i].lhs,all_dfs[i].rhs))
-			
-	
-	if(len(not_satisfied)>0):	
-		print("The following DFs are not satisfied:")
-		for i in range(len(not_satisfied)):
-			print(not_satisfied[i].print_me())
-	else:
-		print("All DFs are satisfied")
+			not_satisfied.append(df.df(all_dfs[i].table_name,all_dfs[i].lhs,all_dfs[i].rhs))		
+	return not_satisfied
 def verify_DF_satisfied(df):
 	"""Checks if the DF is satisfied. 
 	   Goes through all the pairs (lhs,rhs) selected from the given table_name
 	   and checks if for the same values of lhs the rhs is always the same.
+	   If the attributs are not found, returns False.
 			input:	
 				df: df
 			output: 
@@ -50,8 +44,12 @@ def verify_DF_satisfied(df):
 	for i in range (len(df.lhs)):
 		str=str+df.lhs[i]+", "
 	str=str+df.rhs+" FROM "+df.table_name
-	cursor.execute(str)
-	tuples=cursor.fetchall()
+	try:
+		cursor.execute(str)
+		tuples=cursor.fetchall()	
+	except sqlite3.OperationalError:
+		#returns False if attributes or tables were not found
+		return False
 	
 	#contains associations between lhs and rhs. For one lhs only one rhs is acceptable
 	#If for all tuples with the same lhs, rhs remains the same, the DF is met
@@ -76,6 +74,7 @@ def search_in_array(array, lhs):
 			return array[i][-1]
 	return None		
 	
-	
+#def delete_invalid_DFs():
+		
 	
 	

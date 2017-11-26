@@ -77,6 +77,7 @@ def delete_DF():
 			cursor = connection.cursor()
 			cursor.execute('''DELETE FROM FuncDep WHERE table_name = ? AND lhs = ? AND rhs = ?''', (table_name, lhs_tmp, rhs,))
 			connection.commit()
+			removeFromDFList(df.df(table_name,lhs,rhs))
 		else:
 			print("Error : DF not found\n")
 
@@ -99,7 +100,10 @@ def isInDFList(df):
 			if df.equals(all_dfs[i]) == True:
 				inList = True
 		return inList
-
+def removeFromDFList(df):
+		for i in range(len(all_dfs)):
+			if df.equals(all_dfs[i]) == True:
+				all_dfs.pop(i)
 def runApp():
 		running = True
 		while running:
@@ -110,11 +114,21 @@ def runApp():
 				delete_DF()
 			#elif command == "Modify":
 			elif command == "Show invalid":
-				functions_2.show_all_DF_not_satisfied(all_dfs,connection)
+				showInvalid()
 			elif command == "Exit":
 				running = False
 			
-
+def showInvalid():
+	not_satisfied=[]
+	not_satisfied=functions_2.show_all_DF_not_satisfied(all_dfs,connection)
+	
+	if(len(not_satisfied)>0):	
+		print("The following DFs are not satisfied:")
+		for i in range(len(not_satisfied)):
+			print(not_satisfied[i].print_me())
+	else:
+		print("All DFs are satisfied")
+		
 def close():	
 	"""Commits all the changes and closes the connection to the database.
 	"""
