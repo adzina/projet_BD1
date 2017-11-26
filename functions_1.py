@@ -48,7 +48,7 @@ def convert_lhs_to_array(lhs):
 		return list
 		
 def add_DF():
-		"""Allows the user to add a new DF thso the database
+		"""Allows the user to add a new DF to the database
 		"""
 		print("adding a new functional dependency: table_name lhs->rhs\n")
 		table_name=input("enter name of the table: ")
@@ -75,19 +75,34 @@ def delete_DF():
 		rhs=input("enter one attribute on the right hand side: ")
 		if isInDFList(df.df(table_name,lhs,rhs)) == True:
 			cursor = connection.cursor()
-			cursor.execute('''DELETE FROM FuncDep WHERE table_name = ? AND lhs = ? AND rhs = ?''', (table_name, lhs_tmp, rhs,))
+			cursor.execute('''DELETE FROM FuncDep WHERE table_name = ? AND lhs = ? AND rhs = ?''', (table_name, lhs_tmp, rhs))
 			connection.commit()
 			removeFromDFList(df.df(table_name,lhs,rhs))
 		else:
 			print("Error : DF not found\n")
 
-def modify_DF(old_df, new_df):
+def modify_DF():
 		"""Replace a DF by a new DF
 		"""
+		print("old DF:\n")
+		table_name=input("enter name of the table: ")
+		lhs_tmp=input("enter attributes on the left hand side separated by space: ")
+		lhs=convert_lhs_to_array(lhs_tmp)
+		rhs=input("enter one attribute on the right hand side: ")
+		old_df=df.df(table_name,lhs,rhs)
 		if isInDFList(old_df) == True:
 			cursor = connection.cursor()
-			cursor.execute('''DELETE FROM FuncDep WHERE table_name = ? AND lhs = ? AND rhs = ?''', (old_df.table_name, old_df.lhs, old_df.rhs,))
-			cursor.execute('''INSERT INTO FuncDep VALUES ( ? , ? , ?)''', (new_df.table_name, new_df.lhs, new_df.rhs,))
+			cursor.execute('''DELETE FROM FuncDep WHERE table_name = ? AND lhs = ? AND rhs = ?''', (table_name, lhs_tmp, rhs))
+			removeFromDFList(old_df)
+			print("new DF:\n")
+			table_name=input("enter name of the table: ")
+			lhs_tmp=input("enter attributes on the left hand side separated by space: ")
+			lhs=convert_lhs_to_array(lhs_tmp)
+			rhs=input("enter one attribute on the right hand side: ")
+			new_df=df.df(table_name,lhs,rhs)
+			cursor.execute('''INSERT INTO FuncDep VALUES ( ? , ? , ?)''', (table_name, lhs_tmp, rhs))
+			#adding df to local storage
+			all_dfs.append(new_df)
 			connection.commit()
 		else:
 			print("Error : DF not found, can't replace it\n")
@@ -112,7 +127,8 @@ def runApp():
 				add_DF()
 			elif command == "Delete":
 				delete_DF()
-			#elif command == "Modify":
+			elif command == "Modify":
+				modify_DF()
 			elif command == "Show invalid":
 				showInvalid()
 			elif command == "Exit":
