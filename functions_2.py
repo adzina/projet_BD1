@@ -80,13 +80,32 @@ def delete_invalid_DFs():
 	
 	not_satisfied.extend(logical_consequnce)
 	
+	indices=[]
 	if(len(not_satisfied)>0):
 		print("Redundant DFs:")
 		for i in range (len(not_satisfied)):
 			print("{}. {}".format(i,not_satisfied[i].print_me()))
-		print("Enter numbers of DFs you wish to delete")	
+		nrs=input("Enter numbers of DFs you wish to delete: ")
+		nrs=nrs.split(' ')
+		for i in range (len(nrs)):
+			tmp=int(nrs[i])
+			indices.append(tmp)
+		cursor = config.connection.cursor()
+		for i in range (len(indices)):
+			lhs=convert_lhs_to_string(config.all_dfs[indices[i]].lhs)
+			cursor.execute('''DELETE FROM FuncDep WHERE table_name = ? AND lhs = ? AND rhs = ?''', (config.all_dfs[indices[i]].table_name, lhs, config.all_dfs[indices[i]].rhs))
+			config.connection.commit()
+		
+		multi_delete(indices)	
 	else:
 		print("No redundant DFs")
-		
 	
-	
+def multi_delete(nrs):
+    indexes = sorted(list(nrs), reverse=True)
+    for index in indexes:
+        del config.all_dfs[index]	
+def convert_lhs_to_string(lhs):
+		str=""
+		for i in range(len(lhs)):
+			str=lhs[i]+" "
+		return str	
