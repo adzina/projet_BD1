@@ -1,22 +1,18 @@
 import sqlite3
 import df
+import config
 import functions_2
-#declaration of global variables
-connection=None #connection to the database
-all_dfs=[]  #array of objects of type df, stores all functional dependencies
-
 def init():
 	"""Opens the connection to the database and reads all the DFs from the FuncDep table
 		If the FuncDep table is not found, it creates it
 	"""
-	global connection
 	
 	#user has to enter the name of the database
 	database = input("Enter the name of the database : ")
 	#creates a connection with the database
-	connection = sqlite3.connect(database + '.db')
+	config.connection = sqlite3.connect(database + '.db')
 
-	cursor = connection.cursor()
+	cursor = config.connection.cursor()
 	try:
 		cursor.execute("SELECT * FROM FuncDep")
 	except sqlite3.OperationalError:
@@ -26,14 +22,14 @@ def init():
 							rhs text
 			)""")
 	#commits changes	
-	connection.commit()	
+	config.connection.commit()	
 	raw_data=cursor.fetchall()
 	print(raw_data)
 	for i in range (len(raw_data)):
 		table_name=raw_data[i][0]
 		lhs=convert_lhs_to_array(raw_data[i][1])
 		rhs=raw_data[i][2]
-		all_dfs.append(df.df(table_name,lhs,rhs))
+		config.all_dfs.append(df.df(table_name,lhs,rhs))
 	#run the application until user wants to quit it
 	runApp()
 	
@@ -57,13 +53,14 @@ def add_DF():
 		rhs=input("enter one attribute on the right hand side: ")
 		new_df=df.df(table_name,lhs,rhs)
 		#adding df to local storage
-		all_dfs.append(new_df)
+		config.all_dfs.append(new_df)
+		print(len(config.all_dfs))
 		print("===============================================\nYou added the following functional dependency:")
 		print(new_df.print_me())
 		#adding df to database
-		cursor = connection.cursor()
+		cursor = config.connection.cursor()
 		cursor.execute('''INSERT INTO FuncDep VALUES (? , ? ,?)''', (table_name, lhs_tmp ,rhs))
-		connection.commit()
+		config.connection.commit()
 		
 def delete_DF():
 		"""Allows the user to delete a DF from the database
@@ -74,9 +71,9 @@ def delete_DF():
 		lhs=convert_lhs_to_array(lhs_tmp)
 		rhs=input("enter one attribute on the right hand side: ")
 		if isInDFList(df.df(table_name,lhs,rhs)) == True:
-			cursor = connection.cursor()
+			cursor = config.connection.cursor()
 			cursor.execute('''DELETE FROM FuncDep WHERE table_name = ? AND lhs = ? AND rhs = ?''', (table_name, lhs_tmp, rhs))
-			connection.commit()
+			config.connection.commit()
 			removeFromDFList(df.df(table_name,lhs,rhs))
 		else:
 			print("Error : DF not found\n")
@@ -91,7 +88,7 @@ def modify_DF():
 		rhs=input("enter one attribute on the right hand side: ")
 		old_df=df.df(table_name,lhs,rhs)
 		if isInDFList(old_df) == True:
-			cursor = connection.cursor()
+			cursor = config.connection.cursor()
 			cursor.execute('''DELETE FROM FuncDep WHERE table_name = ? AND lhs = ? AND rhs = ?''', (table_name, lhs_tmp, rhs))
 			removeFromDFList(old_df)
 			print("new DF:\n")
@@ -102,8 +99,8 @@ def modify_DF():
 			new_df=df.df(table_name,lhs,rhs)
 			cursor.execute('''INSERT INTO FuncDep VALUES ( ? , ? , ?)''', (table_name, lhs_tmp, rhs))
 			#adding df to local storage
-			all_dfs.append(new_df)
-			connection.commit()
+			config.all_dfs.append(new_df)
+			config.connection.commit()
 		else:
 			print("Error : DF not found, can't replace it\n")
 
@@ -111,14 +108,15 @@ def isInDFList(df):
 		"""Check if a DF is in the array of DF
 		"""
 		inList = False
-		for i in range(len(all_dfs)):
-			if df.equals(all_dfs[i]) == True:
+		for i in range(len(config.all_dfs)):
+			if df.equals(config.all_dfs[i]) == True:
 				inList = True
 		return inList
 def removeFromDFList(df):
-		for i in range(len(all_dfs)):
-			if df.equals(all_dfs[i]) == True:
-				all_dfs.pop(i)
+		for i in range(len(config.all_dfs)):
+			if df.equals(config.all_dfs[i]) == True:
+				config.all_dfs.pop(i)
+				break
 def runApp():
 		running = True
 		while running:
@@ -131,12 +129,14 @@ def runApp():
 				modify_DF()
 			elif command == "Show invalid":
 				showInvalid()
+			elif command == "Delete invalid":
+				functions_2.delete_invalid_DFs()
 			elif command == "Exit":
 				running = False
 			
 def showInvalid():
 	not_satisfied=[]
-	not_satisfied=functions_2.show_all_DF_not_satisfied(all_dfs,connection)
+	not_satisfied=functions_2.show_all_DF_not_satisfied()
 	
 	if(len(not_satisfied)>0):	
 		print("The following DFs are not satisfied:")
@@ -148,6 +148,6 @@ def showInvalid():
 def close():	
 	"""Commits all the changes and closes the connection to the database.
 	"""
-	connection.commit()
-	connection.close()
+	config.connection.commit()
+	config.connection.close()
 			

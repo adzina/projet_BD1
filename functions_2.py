@@ -1,16 +1,14 @@
 import df
 import sqlite3
-import copy
+import config
 
 connection=None
 
-def show_all_DF_not_satisfied(all_dfs, conn):
-	global connection
-	connection=conn
+def show_all_DF_not_satisfied():
 	not_satisfied=[]
-	for i in range(len(all_dfs)):
-		if(not verify_DF_satisfied(all_dfs[i])):
-			not_satisfied.append(df.df(all_dfs[i].table_name,all_dfs[i].lhs,all_dfs[i].rhs))		
+	for i in range(len(config.all_dfs)):
+		if(not verify_DF_satisfied(config.all_dfs[i])):
+			not_satisfied.append(df.df(config.all_dfs[i].table_name,config.all_dfs[i].lhs,config.all_dfs[i].rhs))		
 	return not_satisfied
 def verify_DF_satisfied(df):
 	"""Checks if the DF is satisfied. 
@@ -37,8 +35,7 @@ def verify_DF_satisfied(df):
 		
 	
 	"""
-	global connection
-	cursor = connection.cursor()
+	cursor = config.connection.cursor()
 	#reads all the data from columns present in DF
 	str="SELECT "
 	for i in range (len(df.lhs)):
@@ -74,7 +71,22 @@ def search_in_array(array, lhs):
 			return array[i][-1]
 	return None		
 	
-#def delete_invalid_DFs():
+def delete_invalid_DFs():
+	not_satisfied=[]
+	not_satisfied=show_all_DF_not_satisfied()
+	
+	logical_consequnce=[]
+	#not_satisfied=show_all_logical_consequence()
+	
+	not_satisfied.extend(logical_consequnce)
+	
+	if(len(not_satisfied)>0):
+		print("Redundant DFs:")
+		for i in range (len(not_satisfied)):
+			print("{}. {}".format(i,not_satisfied[i].print_me()))
+		print("Enter numbers of DFs you wish to delete")	
+	else:
+		print("No redundant DFs")
 		
 	
 	
