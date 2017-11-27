@@ -133,7 +133,7 @@ def runApp():
 				functions_2.delete_invalid_DFs()
 			elif command == "Exit":
 				running = False
-			elif command == "Cons":
+			elif command == "Show LogicConseq":
 				for f in functions_2.getLogicalConsequence(config.all_dfs):
 					print(f.print_me())
 			

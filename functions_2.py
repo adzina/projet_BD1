@@ -108,7 +108,6 @@ def isLogicalConsequence(attributes, df):
 	oldDep = []
 	newDep = attributes[:]
 	f = df[:]
-	print(f)
 	while newDep != oldDep :
 		oldDep = newDep
 		for depF in f :
