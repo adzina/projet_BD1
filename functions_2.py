@@ -99,6 +99,39 @@ def delete_invalid_DFs():
 		multi_delete(indices)	
 	else:
 		print("No redundant DFs")
+
+#Quelques tests plus compliqués sont encore à tester
+def isLogicalConsequence(attributes, df):
+	"""Return all the attributes Y involved by the attributes X (X->Y) and that satisfied the set of DF df
+	"""
+	#Algortihm based on http://web.cecs.pdx.edu/~maier/TheoryBook/MAIER/C04.pdf
+	oldDep = []
+	newDep = attributes[:]
+	f = df[:]
+	while newDep != oldDep :
+		oldDep = newDep
+		for depF in f :
+			x = depF.lhs
+			if isIncluded(x, newDep) :
+				if depF.rhs not in newDep:
+					newDep.append(depF.rhs)
+	if len(newDep)>len(attributes):
+		return newDep[len(attributes):]
+	else:
+		return []
+#Quelques tests plus compliqués sont encore à tester
+def getLogicalConsequence(all_dfs):
+	"""Return the DF that are logical Consequence in all_dfs
+	"""
+	#Algorithm based on http://web.cecs.pdx.edu/~maier/TheoryBook/MAIER/C04.pdf
+	logicalConsequence = []
+	for df in all_dfs:
+		depFunc = all_dfs[:]
+		depFunc.remove(df)
+		logicConsequence = isLogicalConsequence(df.lhs, depFunc)
+		if df.rhs in logicConsequence:
+			logicalConsequence.append(df)
+	return logicalConsequence
 	
 def multi_delete(nrs):
     indexes = sorted(list(nrs), reverse=True)
@@ -141,12 +174,12 @@ def find_key(table_name):
 				sk.remove(df_of_this_table[i].rhs)
 				return sk
 				
-			
-			
-			
-			
-			
-			
-			
-			
-			
+
+def isIncluded(array1, array2):
+	if len(array1) > len(array2) :
+		return False
+	else:
+		for i in array1:
+			if i not in array2:
+				return False
+		return True	
