@@ -108,4 +108,45 @@ def convert_lhs_to_string(lhs):
 		str=""
 		for i in range(len(lhs)):
 			str=lhs[i]+" "
-		return str	
+		return str
+def find_super_key(df):
+			'''
+			Based on this aproach: https://stackoverflow.com/questions/5735592/determine-keys-from-functional-dependencies
+			'''
+			print(df.table_name)
+			present=[]
+			super_key=[]
+			present.extend(df.lhs)
+			super_key.extend(df.lhs)
+			present.extend(df.rhs)
+			cursor = config.connection.cursor()
+			str="SELECT * FROM "+df.table_name
+			cursor.execute(str)
+			#gets columns' names
+			names = list(map(lambda x: x[0], cursor.description))
+			for i in range (len(names)):
+				if (names[i] not in present):
+					super_key.extend(names[i])
+			return super_key
+def find_key(table_name):
+		df_of_this_table=[]
+		for i in range (len(config.all_dfs)):
+			if (table_name==all_dfs[i].table_name):
+				df_of_this_table.append(all_dfs[i])
+		sk=find_super_key(df_of_this_table[0])
+		for i in range (1,len(df_of_this_table)):
+			#checks if lhs and rhs are subsets of superkey
+			if (set(df_of_this_table[i].lhs).issubset(sk) and set(df_of_this_table[i].rhs).issubset(sk)):
+				#removes the rhs from super key in order to minimalize it
+				sk.remove(df_of_this_table[i].rhs)
+				return sk
+				
+			
+			
+			
+			
+			
+			
+			
+			
+			

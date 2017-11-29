@@ -30,6 +30,7 @@ def init():
 		lhs=convert_lhs_to_array(raw_data[i][1])
 		rhs=raw_data[i][2]
 		config.all_dfs.append(df.df(table_name,lhs,rhs))
+	functions_2.find_super_key(config.all_dfs[0])	
 	#run the application until user wants to quit it
 	runApp()
 	
@@ -130,7 +131,7 @@ def runApp():
 			elif command == "Show invalid":
 				showInvalid()
 			elif command == "Delete invalid":
-				functions_2.delete_invalid_DFs()
+				functions_2.delete_invalid_DFs()	
 			elif command == "Exit":
 				running = False
 			
