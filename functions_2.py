@@ -75,10 +75,10 @@ def delete_invalid_DFs():
 	not_satisfied=[]
 	not_satisfied=show_all_DF_not_satisfied()
 	
-	logical_consequnce=[]
-	#not_satisfied=show_all_logical_consequence()
+	logical_consequence=[]
+	logical_consequence=getLogicalConsequence(config.all_dfs)
 	
-	not_satisfied.extend(logical_consequnce)
+	not_satisfied.extend(logical_consequence)
 	
 	indices=[]
 	if(len(not_satisfied)>0):
@@ -144,7 +144,7 @@ def convert_lhs_to_string(lhs):
 		return str
 def find_super_key(df):
 			'''
-			Based on this aproach: https://stackoverflow.com/questions/5735592/determine-keys-from-functional-dependencies
+			Based on this approach: https://stackoverflow.com/questions/5735592/determine-keys-from-functional-dependencies
 			'''
 			print(df.table_name)
 			present=[]
