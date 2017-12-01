@@ -1,40 +1,39 @@
 import df
 import sqlite3
 import config
+import functions_1
 
 connection=None
 
 def show_all_DF_not_satisfied():
+	"""
+	return a list of all the unsatisfied DF in the all_dfs
+	:return: List of all the unsatisfied DF
+	"""
 	not_satisfied=[]
 	for i in range(len(config.all_dfs)):
 		if(not verify_DF_satisfied(config.all_dfs[i])):
 			not_satisfied.append(df.df(config.all_dfs[i].table_name,config.all_dfs[i].lhs,config.all_dfs[i].rhs))		
 	return not_satisfied
 def verify_DF_satisfied(df):
-	"""Checks if the DF is satisfied. 
-	   Goes through all the pairs (lhs,rhs) selected from the given table_name
-	   and checks if for the same values of lhs the rhs is always the same.
-	   If the attributs are not found, returns False.
-			input:	
-				df: df
-			output: 
-				satisfied: bool
-				
-	   Example:
-	   df=(table_name="employee", lhs="name lastname" rhs="address")
-	   df is satisfied for the following table:
-	   employee| name	|	lastname	| address
-				Jack	 Sparrow		 London, Picadilly Circus 17
-				Ada		 Lovelace		 London, Fann Street 9
-		
-		but not by the following table:		
-		employee| name	|	lastname	| address
-				 Jack	 Sparrow		 London, Picadilly Circus 17
-				 Ada	 Lovelace		 London, Fann Street 9
-				 Ada	 Lovelace		 London, Picadilly Circus 17
-		
-	
 	"""
+	Checks if a DF is satisfied.
+	:param df: A functional dependencie
+	:return: True if the df is satisfied, False if not
+	"""			
+	   #Example:
+	   #df=(table_name="employee", lhs="name lastname" rhs="address")
+	   #df is satisfied for the following table:
+	   #employee| name	|	lastname	| address
+		#		Jack	 Sparrow		 London, Picadilly Circus 17
+		#		Ada		 Lovelace		 London, Fann Street 9
+		#
+		#but not by the following table:		
+		#employee| name	|	lastname	| address
+		#		 Jack	 Sparrow		 London, Picadilly Circus 17
+		#		 Ada	 Lovelace		 London, Fann Street 9
+		#		 Ada	 Lovelace		 London, Picadilly Circus 17
+		
 	cursor = config.connection.cursor()
 	#reads all the data from columns present in DF
 	str="SELECT "
@@ -66,12 +65,22 @@ def verify_DF_satisfied(df):
 	
 	
 def search_in_array(array, lhs):
+	"""
+	Search a list of attributes in an array
+	:param array: An array of lhs
+	:param lhs: The list of attributes to find
+	:return: The lhs if it is in the array, None if not
+	"""
 	for i in range (len(array)):
 		if(array[i][:-1]==lhs):
 			return array[i][-1]
 	return None		
 	
 def delete_invalid_DFs():
+	"""
+	Delete all the invalid functionals dependencies from the funcDep table
+	:return: None
+	"""
 	not_satisfied=[]
 	not_satisfied=show_all_DF_not_satisfied()
 	
@@ -100,9 +109,12 @@ def delete_invalid_DFs():
 	else:
 		print("No redundant DFs")
 
-#Quelques tests plus compliqués sont encore à tester
 def isLogicalConsequence(attributes, df):
-	"""Return all the attributes Y involved by the attributes X (X->Y) and that satisfied the set of DF df
+	"""
+	Return all the attributes Y involved by the attributes X (X->Y) and that satisfied the set of DF df
+	:param attributes: List of attributes
+	:param df: A list of functionals dependencies
+	:return: All the attributes involved
 	"""
 	#Algortihm based on http://web.cecs.pdx.edu/~maier/TheoryBook/MAIER/C04.pdf
 	oldDep = []
@@ -119,9 +131,12 @@ def isLogicalConsequence(attributes, df):
 		return newDep[len(attributes):]
 	else:
 		return []
-#Quelques tests plus compliqués sont encore à tester
+
 def getLogicalConsequence(all_dfs):
-	"""Return the DF that are logical Consequence in all_dfs
+	"""
+	Return the DF that are logical Consequence in the group of df given
+	:param all_dfs: A list of functionals dependencies
+	:return: A list of logical consequence
 	"""
 	#Algorithm based on http://web.cecs.pdx.edu/~maier/TheoryBook/MAIER/C04.pdf
 	logicalConsequence = []
@@ -132,19 +147,13 @@ def getLogicalConsequence(all_dfs):
 		if df.rhs in logicConsequence:
 			logicalConsequence.append(df)
 	return logicalConsequence
-	
-def multi_delete(nrs):
-    indexes = sorted(list(nrs), reverse=True)
-    for index in indexes:
-        del config.all_dfs[index]	
-def convert_lhs_to_string(lhs):
-		str=""
-		for i in range(len(lhs)):
-			str=lhs[i]+" "
-		return str
+			
 def find_super_key(df):
 			'''
 			Based on this approach: https://stackoverflow.com/questions/5735592/determine-keys-from-functional-dependencies
+			Return a super key based on a DF
+			:param df: A functional dependencie
+			:return: A super key
 			'''
 			present=[]
 			super_key=[]
@@ -161,6 +170,11 @@ def find_super_key(df):
 					super_key.extend(names[i])
 			return super_key
 def find_primary_key(table_name):
+		"""
+		Return the primary key of a table
+		:param table_name: 
+		:return: A primary key of the table
+		"""
 		df_of_this_table=[]
 		for i in range (len(config.all_dfs)):
 			if (table_name==all_dfs[i].table_name):
@@ -172,9 +186,54 @@ def find_primary_key(table_name):
 				#removes the rhs from super key in order to minimalize it
 				pk.remove(df_of_this_table[i].rhs)
 				return pk
-				
+	
+def verifyBCNF(table):
+	"""
+	Check if the schema of a table is in BCNF
+	:param table: A table of the database
+	:return: True if the schema is in BCNF, False if not
+	"""
+	sigma = []
+	for f in functions_1.getDFs(table):
+		if(f.table_name == table):
+			sigma.append(f)
+	for df in sigma:
+		#for X->A, check if A not included in X
+		if isIncluded(df.rhs, df.lhs) == False:
+			#check if there is logical consequence for X
+			if len(isLogicalConsequence(df.lhs, sigma)) == 0:
+				print("This schema is not in BCNF")
+				return False
+			else:
+				#check if all the logical Consequence from X equals the attributes of the table
+				if set(isLogicalConsequence(df.lhs, sigma)+df.lhs) != set(functions_1.getAttributes(table)):
+					print("This schema is not in BCNF")
+					return False
+	return True
+	
+def multi_delete(nrs):
+    indexes = sorted(list(nrs), reverse=True)
+    for index in indexes:
+        del config.all_dfs[index]
+        	
+def convert_lhs_to_string(lhs):
+		"""
+		Change a list of attributes to a String
+		:param lhs: A list of attributes
+		:return: A string
+		"""
+		str=""
+		for i in range(len(lhs)):
+			str=lhs[i]+" "
+		return str
 
 def isIncluded(array1, array2):
+	"""
+	Check if an array is in an other
+	:param array1: the array included
+	:param array2: the main array
+	:return: True if the array1 is included in array2
+	"""
 	if len(array1) > len(array2) :
 		return False
 	else:
