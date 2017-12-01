@@ -9,6 +9,7 @@ def init():
 	
 	#user has to enter the name of the database
 	database = input("Enter the name of the database : ")
+	#database="database"
 	#creates a connection with the database
 	config.connection = sqlite3.connect(database + '.db')
 
@@ -24,13 +25,14 @@ def init():
 	#commits changes	
 	config.connection.commit()	
 	raw_data=cursor.fetchall()
-	print(raw_data)
 	for i in range (len(raw_data)):
 		table_name=raw_data[i][0]
 		lhs=convert_lhs_to_array(raw_data[i][1])
 		rhs=raw_data[i][2]
 		config.all_dfs.append(df.df(table_name,lhs,rhs))
 	#run the application until user wants to quit it
+	
+	print(functions_2.find_all_super_keys("test"))		
 	runApp()
 	
 def convert_lhs_to_array(lhs):

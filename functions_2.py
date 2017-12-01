@@ -1,6 +1,8 @@
 import df
 import sqlite3
 import config
+import itertools
+
 
 connection=None
 
@@ -142,37 +144,100 @@ def convert_lhs_to_string(lhs):
 		for i in range(len(lhs)):
 			str=lhs[i]+" "
 		return str
-def find_super_key(df):
-			'''
-			Based on this approach: https://stackoverflow.com/questions/5735592/determine-keys-from-functional-dependencies
-			'''
-			present=[]
-			super_key=[]
-			present.extend(df.lhs)
-			super_key.extend(df.lhs)
-			present.extend(df.rhs)
-			cursor = config.connection.cursor()
-			str="SELECT * FROM "+df.table_name
-			cursor.execute(str)
-			#gets names of all columns in df's table
-			names = list(map(lambda x: x[0], cursor.description))
-			for i in range (len(names)):
-				if (names[i] not in present):
-					super_key.extend(names[i])
-			return super_key
+		
+def get_all_attributes(table_name):
+		cursor = config.connection.cursor()
+		cursor.execute('SELECT * FROM {}'.format(table_name,))
+		#gets names of all columns in df's table
+		names = list(map(lambda x: x[0], cursor.description))
+		return names
+
+def findsubsets(S,m):
+    return set(itertools.combinations(S, m))
+	
+def find_all_super_keys(table_name):
+				
+		sk=set()
+		pk=set(find_primary_key(table_name))
+		sk_list=[]
+		attr=get_all_attributes(table_name)
+		other_args=set(attr).difference(pk)
+		sk_list.append(pk)
+		for i in range(len(other_args)):
+			subs=findsubsets(other_args,i+1)
+			for j in subs:
+				tmp=pk.copy()
+				tmp=pk|set(j)
+				sk.update(tmp)
+				sk_list.append(sk)
+				sk=set()
+		return sk_list	
+		
+"""
+To determine the primary key, the algoritm divises arguments into two categories:
+left and middle.
+
+left - attributes that never occur on the rhs of a DF
+middle - attribute that can be found in both rhs and lhs 
+
+Algorithm starts with the left set and adds to it only those middle attributes which cannot be defined by argument already in left set
+"""		
+def sort_into_left_and_middle(attr,df_of_this_table):
+	in_left=False
+	in_right=False
+	left=[]
+	middle=[]
+	for i in range(len(attr)):
+		for j in range(len(df_of_this_table)):
+			if(attr[i] in df_of_this_table[j].lhs):
+				in_left=True
+			if(attr[i] in df_of_this_table[j].rhs):
+				in_right=True
+		if (in_left and in_right):
+			middle.append(attr[i])
+		elif(in_left and not in_right):
+			left.append(attr[i])
+		in_left=False
+		in_right=False
+	return (left,middle)
+
+def check_middles(left,middle,df_of_this_table):
+		flag=True
+		for i in range(len(middle)):
+			for j in range(len(df_of_this_table)):
+				for k in  range(len(df_of_this_table[j].lhs)):
+					if(df_of_this_table[j].rhs==middle[i] and df_of_this_table[j].lhs[k] in left):
+						flag=False
+				
+				if(flag==True):	
+					left.append(middle[i])
+					middle.pop(i)
+					(left,middle)=check_middles(left,middle,df_of_this_table)
+					return (left,middle)
+						
+		return(left,middle)
+'''		
+def find_closure(attr,df_of_this_table):
+		for i in range (len(df_of_this_table)):
+			if(set(df_of_this_table[i].lhs)).issubset(attr):
+				attr.append(df_of_this_table[i].rhs)
+				i=0
+		for i in range(len(attr)):
+			print(attr[i])
+'''			
 def find_primary_key(table_name):
 		df_of_this_table=[]
+		pk=[]
+		attr=get_all_attributes(table_name)
+		
 		for i in range (len(config.all_dfs)):
-			if (table_name==all_dfs[i].table_name):
-				df_of_this_table.append(all_dfs[i])
-		pk=find_super_key(df_of_this_table[0])
-		for i in range (1,len(df_of_this_table)):
-			#checks if lhs and rhs are subsets of superkey
-			if (set(df_of_this_table[i].lhs).issubset(pk) and set(df_of_this_table[i].rhs).issubset(pk)):
-				#removes the rhs from super key in order to minimalize it
-				pk.remove(df_of_this_table[i].rhs)
-				return pk
+			if (table_name==config.all_dfs[i].table_name):
+				df_of_this_table.append(config.all_dfs[i])
 				
+		(left,middle)=sort_into_left_and_middle(attr,df_of_this_table)
+		check_middles(left,middle,df_of_this_table)
+		pk=left
+		return pk	
 
 def isIncluded(array1, array2):
 	if len(array1) > len(array2) :
@@ -181,4 +246,5 @@ def isIncluded(array1, array2):
 		for i in array1:
 			if i not in array2:
 				return False
-		return True	
+		return True		
+		
