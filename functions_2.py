@@ -151,9 +151,14 @@ def getLogicalConsequence(all_dfs):
 	return logicalConsequence
 	
 def multi_delete(nrs):
-    indexes = sorted(list(nrs), reverse=True)
-    for index in indexes:
-        del config.all_dfs[index]	
+		"""
+		Removes multiple DFs from global storage
+		:param nrs: indices of elements to be removed
+		:return: None
+		"""
+		indexes = sorted(list(nrs), reverse=True)
+		for index in indexes:
+			del config.all_dfs[index]	
 def convert_lhs_to_string(lhs):
 		str=""
 		for i in range(len(lhs)):
@@ -161,6 +166,10 @@ def convert_lhs_to_string(lhs):
 		return str
 		
 def get_all_attributes(table_name):
+		"""Find names of all columns in a table
+			:param table_name: name of a table
+			:return: array of names
+		"""
 		cursor = config.connection.cursor()
 		cursor.execute('SELECT * FROM {}'.format(table_name,))
 		#gets names of all columns in df's table
@@ -168,15 +177,40 @@ def get_all_attributes(table_name):
 		return names
 
 def findsubsets(S,m):
-    return set(itertools.combinations(S, m))
+		"""Find subsets of set
+			:param S: set
+			:param m: number of elements in subset
+			:return: all subsets of size m from set S
+		"""
+		return set(itertools.combinations(S, m))
 	
 def find_all_super_keys(table_name):
+		sk_list=[]
+		tmp=set()
+		pk=find_primary_key(table_name)
+		for i in pk:
+			sk=find_super_keys_from_pk(i,table_name)
+			sk_list.extend(sk)
+		sk_list=remove_repetitions(sk_list)	
+		return sk_list
+def remove_repetitions(table):
+		res=[]
+		flag=True
+		for i in range(len(table)):
+			for j in range(i+1,len(table)):
+				if(table[j].issubset(table[i]) and table[i].issubset(table[j])):
+					flag=False
+			if(flag==True):
+				res.append(table[i])
+			else:
+				flag=True
+		return res		
+def find_super_keys_from_pk(pk,table_name):
 		"""
 		:param table_name: name of a relation
 		:return: set of all super keys based on the primary key of this relation
 		"""				
 		sk=set()
-		pk=set(find_primary_key(table_name))
 		sk_list=[]
 		attr=get_all_attributes(table_name)
 		other_args=set(attr).difference(pk)
@@ -201,6 +235,14 @@ middle - attribute that can be found in both rhs and lhs
 Algorithm starts with the left set and adds to it only those middle attributes which cannot be defined by argument already in left set
 """		
 def sort_into_left_and_middle(attr,df_of_this_table):
+	"""
+	Sort attributes into two groups: left and middle
+	left - attributes that never occur on the rhs of a DF
+	middle - attribute that can be found in both rhs and lhs 
+	:param attr: list of all attributes of a table
+	:param df_of_this_table: list of all dependencies assigned to this table
+	:return: a tuple (left,middle)
+	"""
 	in_left=False
 	in_right=False
 	left=[]
@@ -328,10 +370,6 @@ def verifyBCNF(table):
 					return False
 	return True
 	
-def multi_delete(nrs):
-    indexes = sorted(list(nrs), reverse=True)
-    for index in indexes:
-        del config.all_dfs[index]
         	
 def convert_lhs_to_string(lhs):
 		"""
@@ -359,3 +397,20 @@ def isIncluded(array1, array2):
 				return False
 		return True		
 		
+		
+
+"""
+3NF: 1.iteruj po wszystkich df danej tabeli
+	 2. sprawdz czy:
+		lhs jest super keys
+		lub
+		rhs jest w ktoryms z candidate key
+	 3. zapisz df, dla których nie jest to spełnione
+	 4. oblicz dekompozycje tabeli
+	 5. eksportuj do nowej bazy danych
+	 6. zapisz df w FuncDep
+"""	
+def verify3NF(table):
+		df_of_this_table=functions_1.getDFs(table)
+		for i in df_of_this_table:
+			pass

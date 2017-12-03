@@ -2,6 +2,7 @@ import sqlite3
 import df
 import config
 import functions_2
+
 def init():
 	"""
 	Opens the connection to the database and reads all the DFs from the FuncDep table
@@ -10,8 +11,8 @@ def init():
 	"""
 	
 	#user has to enter the name of the database
-	database = input("Enter the name of the database : ")
-	#database="database"
+	#database = input("Enter the name of the database : ")
+	database="database"
 	#creates a connection with the database
 	config.connection = sqlite3.connect(database + '.db')
 
@@ -34,7 +35,7 @@ def init():
 		config.all_dfs.append(df.df(table_name,lhs,rhs))
 	#run the application until user wants to quit it
 	
-	#print(functions_2.find_primary_key("test"))		
+	print(functions_2.find_all_super_keys("test"))		
 	runApp()
 	
 def convert_lhs_to_array(lhs):
