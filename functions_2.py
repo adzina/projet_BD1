@@ -419,13 +419,11 @@ def verify3NF(table):
 		pk=find_primary_key(table)
 		primary_attr=set()
 		invalid_dfs=[]
-		
 		for i in pk:
-			primary_attr.union(i)
-			
-		print(pk)
+			print(set(i))
+			primary_attr=primary_attr|set(i)
 		for i in df_of_this_table:
-			if(i.lhs not in sk and i.rhs not in primary_attr): 
+			if(set(i.lhs) not in sk and i.rhs not in primary_attr): 
 				invalid_dfs.append(i)
 		if(len(invalid_dfs)>0):
 			for i in invalid_dfs:
