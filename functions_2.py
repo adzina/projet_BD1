@@ -189,7 +189,7 @@ def find_all_super_keys(table_name):
 		tmp=set()
 		pk=find_primary_key(table_name)
 		for i in pk:
-			sk=find_super_keys_from_pk(i,table_name)
+			sk=find_super_keys_from_pk(set(i),table_name)
 			sk_list.extend(sk)
 		sk_list=remove_repetitions(sk_list)	
 		return sk_list
@@ -312,13 +312,17 @@ def find_closure(attr,df_of_this_table):
 			:param df_of_this_table:
 			:return: closure
 		"""
+		changed=False
 		closure=copy.deepcopy(attr)
 		for i in range (len(df_of_this_table)):
-			if(set(df_of_this_table[i].lhs)).issubset(attr):
+			if(set(df_of_this_table[i].lhs)).issubset(attr) and df_of_this_table[i].rhs not in closure:
 				closure.update(df_of_this_table[i].rhs)
-				i=0
-		return closure
-
+				changed=True
+		if(changed==False):	
+			return closure
+		else:
+			closure=find_closure(closure,df_of_this_table)
+			return closure
 def find_primary_key(table_name):
 		"""
 		Return candidate keys of a table
@@ -337,8 +341,7 @@ def find_primary_key(table_name):
 		
 		#check_middles(left,middle,df_of_this_table)
 		#pk=left
-		print(left)
-		print(middle)
+		print(find_closure(set(left),df_of_this_table))
 		if(set(attr).issubset(find_closure(set(left),df_of_this_table))):
 			return set(left)
 		else:	
@@ -412,5 +415,20 @@ def isIncluded(array1, array2):
 """	
 def verify3NF(table):
 		df_of_this_table=functions_1.getDFs(table)
+		sk=find_all_super_keys(table)
+		pk=find_primary_key(table)
+		primary_attr=set()
+		invalid_dfs=[]
+		
+		for i in pk:
+			primary_attr.union(i)
+			
+		print(pk)
 		for i in df_of_this_table:
-			pass
+			if(i.lhs not in sk and i.rhs not in primary_attr): 
+				invalid_dfs.append(i)
+		if(len(invalid_dfs)>0):
+			for i in invalid_dfs:
+				print(i.print_me())
+			return False
+		return True	
