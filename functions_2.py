@@ -444,21 +444,42 @@ def decompose(table,invalid_dfs):
 		attr=get_all_attributes(table)
 		for i in invalid_dfs:
 			attr.remove(i.rhs)
-		cursor=config.connection.cursor()
 		s=convert_attr_to_string(attr)
 		
-		cursor.execute("""CREATE TABLE {} AS SELECT {} FROM {}""".format(table+"BCNF1",s,table))	
+		database = input("Enter the name of the database you want to export new tables to: ")
+		connection = sqlite3.connect(database + '.db')
+		cursor=config.connection.cursor()
+		cursor.execute("""SELECT * FROM {}""".format(table,))
+		copy_data=cursor.fetchall()
+		
+		#create a copy of table being decomposed and delete it from original database
+		cursor.execute("""select sql from sqlite_master where type = 'table' and name = '{}'""".format(table,))
+		schema=cursor.fetchone()
+		cursor.execute("""DROP TABLE {}""".format(table,))
+		cursor=connection.cursor()
+		
+		#copy the table to the second database
+		cursor.execute(schema[0])
+		for i in copy_data:
+			cursor.execute("""INSERT INTO {} VALUES {}""".format(table,i))
+		connection.commit()	
+		
+		cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"BCNF1",s,table))	
 		counter=1
 		for i in invalid_dfs:
 			counter+=1
 			tmp_attr=copy.deepcopy(i.lhs)
 			tmp_attr.extend(i.rhs)
 			s=convert_attr_to_string(tmp_attr)
-			cursor.execute("""CREATE TABLE {} AS SELECT {} FROM {}""".format(table+"BCNF"+str(counter),s,table))
-		cursor.execute("""DROP TABLE {}""".format(table,))	
+			cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"BCNF"+str(counter),s,table))
 		
+		cursor.execute("DROP TABLE {}".format(table,))	
+		cursor=config.connection.cursor()
+		connection.commit()
+		connection.close()
+		config.connection.commit()
 			
-			
+		
 			
 			
 			
