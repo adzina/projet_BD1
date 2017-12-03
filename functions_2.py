@@ -3,6 +3,7 @@ import sqlite3
 import config
 import itertools
 import functions_1
+import copy
 
 connection=None
 
@@ -79,7 +80,7 @@ def search_in_array(array, lhs):
 	
 def delete_invalid_DFs():
 	"""
-	Delete all the invalid functionals dependencies from the funcDep table
+	Delete all the invalid functional dependencies from the funcDep table
 	:return: None
 	"""
 	not_satisfied=[]
@@ -170,10 +171,10 @@ def findsubsets(S,m):
     return set(itertools.combinations(S, m))
 	
 def find_all_super_keys(table_name):
-'''
-			:param table_name: name of a relation
-			:return: set of all super keys based on the primary key of this relation
-'''				
+		"""
+		:param table_name: name of a relation
+		:return: set of all super keys based on the primary key of this relation
+		"""				
 		sk=set()
 		pk=set(find_primary_key(table_name))
 		sk_list=[]
@@ -217,7 +218,7 @@ def sort_into_left_and_middle(attr,df_of_this_table):
 		in_left=False
 		in_right=False
 	return (left,middle)
-
+'''
 def check_middles(left,middle,df_of_this_table):
 		flag=True
 		for i in range(len(middle)):
@@ -234,19 +235,53 @@ def check_middles(left,middle,df_of_this_table):
 						
 		return(left,middle)
 '''		
+def check_all_sets(left,middle,attr,df_of_this_table):
+		"""Verify all combinations of middle attributes with all left attributes to find those which closure is a full set of attributes
+			:param:left
+			:param:middle
+			:param:attr: all attributes of a table
+			:df_of_this_table
+			:return:set of candidate keys
+		"""
+		list_pk=[]
+		minimal_pk=[]
+		pk=set(left)
+		for i in range(len(middle)):
+			subs=findsubsets(set(middle),i+1)
+			for j in subs:
+				candidate=pk.union(j)
+				closure=find_closure(candidate,df_of_this_table)
+				if(set(attr).issubset(closure)):
+					#closure covers all attributes of a table
+					list_pk.append(candidate)
+				tmp=set()
+		flag=True		
+		for i in range(len(list_pk)):
+			for j in range(i+1,len(list_pk)):
+				if(list_pk[j].issubset(list_pk[i])):
+					flag=False
+			if(flag==True):
+				minimal_pk.append(list_pk[i])
+			flag=True	
+		return minimal_pk	
 def find_closure(attr,df_of_this_table):
+		"""Find closure determined by a set of attributes
+			:param attr: set of attributes
+			:param df_of_this_table:
+			:return: closure
+		"""
+		closure=copy.deepcopy(attr)
 		for i in range (len(df_of_this_table)):
 			if(set(df_of_this_table[i].lhs)).issubset(attr):
-				attr.append(df_of_this_table[i].rhs)
+				closure.update(df_of_this_table[i].rhs)
 				i=0
-		for i in range(len(attr)):
-			print(attr[i])
-'''
+		return closure
+
 def find_primary_key(table_name):
 		"""
-		Return the primary key of a table
+		Return candidate keys of a table
 		:param table_name: 
-		:return: A primary key of the table
+		:return: Candidate keys of the table
 		"""
 		df_of_this_table=[]
 		pk=[]
@@ -257,10 +292,16 @@ def find_primary_key(table_name):
 				df_of_this_table.append(config.all_dfs[i])
 				
 		(left,middle)=sort_into_left_and_middle(attr,df_of_this_table)
-		check_middles(left,middle,df_of_this_table)
 		
-		pk=left
-		return pk	
+		#check_middles(left,middle,df_of_this_table)
+		#pk=left
+		print(left)
+		print(middle)
+		if(set(attr).issubset(find_closure(set(left),df_of_this_table))):
+			return set(left)
+		else:	
+			pk=check_all_sets(left,middle,attr,df_of_this_table)
+			return pk	
 
 	
 def verifyBCNF(table):

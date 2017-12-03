@@ -34,7 +34,7 @@ def init():
 		config.all_dfs.append(df.df(table_name,lhs,rhs))
 	#run the application until user wants to quit it
 	
-	print(functions_2.find_all_super_keys("test"))		
+	#print(functions_2.find_primary_key("test"))		
 	runApp()
 	
 def convert_lhs_to_array(lhs):
