@@ -341,7 +341,6 @@ def find_primary_key(table_name):
 		
 		#check_middles(left,middle,df_of_this_table)
 		#pk=left
-		print(find_closure(set(left),df_of_this_table))
 		if(set(attr).issubset(find_closure(set(left),df_of_this_table))):
 			return set(left)
 		else:	
@@ -382,9 +381,19 @@ def convert_lhs_to_string(lhs):
 		"""
 		str=""
 		for i in range(len(lhs)):
-			str=lhs[i]+" "
+			str=str+lhs[i]+" "
 		return str
-
+def convert_attr_to_string(attr):
+		"""
+		Change a list of attributes to a String
+		:param lhs: A list of attributes
+		:return: A string
+		"""
+		str=""
+		for i in range(len(attr)-1):
+			str=str+attr[i]+", "
+		str=str+attr[-1]	
+		return str
 def isIncluded(array1, array2):
 	"""
 	Check if an array is in an other
@@ -403,30 +412,55 @@ def isIncluded(array1, array2):
 		
 
 """
-3NF: 1.iteruj po wszystkich df danej tabeli
+3NF: 1.iteruj po wszystkich df danej tabeli				done
 	 2. sprawdz czy:
 		lhs jest super keys
 		lub
-		rhs jest w ktoryms z candidate key
-	 3. zapisz df, dla których nie jest to spełnione
+		rhs jest w ktoryms z candidate key				done
+	 3. zapisz df, dla których nie jest to spełnione  	done
 	 4. oblicz dekompozycje tabeli
 	 5. eksportuj do nowej bazy danych
 	 6. zapisz df w FuncDep
 """	
 def verify3NF(table):
+		"""Verify whether a table is in 3NF
+			:param table: name of a table
+			:return invalid_dfs: list of dfs violating the rules of 3NF
+		"""
 		df_of_this_table=functions_1.getDFs(table)
 		sk=find_all_super_keys(table)
 		pk=find_primary_key(table)
 		primary_attr=set()
 		invalid_dfs=[]
 		for i in pk:
-			print(set(i))
 			primary_attr=primary_attr|set(i)
 		for i in df_of_this_table:
 			if(set(i.lhs) not in sk and i.rhs not in primary_attr): 
 				invalid_dfs.append(i)
-		if(len(invalid_dfs)>0):
-			for i in invalid_dfs:
-				print(i.print_me())
-			return False
-		return True	
+		return invalid_dfs
+		
+def decompose(table,invalid_dfs):
+		tmp_attr=[]
+		attr=get_all_attributes(table)
+		for i in invalid_dfs:
+			attr.remove(i.rhs)
+		cursor=config.connection.cursor()
+		s=convert_attr_to_string(attr)
+		
+		cursor.execute("""CREATE TABLE {} AS SELECT {} FROM {}""".format(table+"BCNF1",s,table))	
+		counter=1
+		for i in invalid_dfs:
+			counter+=1
+			tmp_attr=copy.deepcopy(i.lhs)
+			tmp_attr.extend(i.rhs)
+			s=convert_attr_to_string(tmp_attr)
+			cursor.execute("""CREATE TABLE {} AS SELECT {} FROM {}""".format(table+"BCNF"+str(counter),s,table))
+		cursor.execute("""DROP TABLE {}""".format(table,))	
+		
+			
+			
+			
+			
+			
+			
+			

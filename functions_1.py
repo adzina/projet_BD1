@@ -34,8 +34,8 @@ def init():
 		rhs=raw_data[i][2]
 		config.all_dfs.append(df.df(table_name,lhs,rhs))
 	#run the application until user wants to quit it
-	
-	print(functions_2.verify3NF("test2"))		
+	s=functions_2.verify3NF("test2")
+	print(functions_2.decompose("test2",s))
 	runApp()
 	
 def convert_lhs_to_array(lhs):
