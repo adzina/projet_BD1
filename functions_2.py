@@ -380,8 +380,9 @@ def convert_lhs_to_string(lhs):
 		:return: A string
 		"""
 		str=""
-		for i in range(len(lhs)):
+		for i in range(len(lhs)-1):
 			str=str+lhs[i]+" "
+		str=str+lhs[-1]	
 		return str
 def convert_attr_to_string(attr):
 		"""
@@ -440,6 +441,7 @@ def verify3NF(table):
 		return invalid_dfs
 		
 def decompose(table,invalid_dfs):
+		
 		tmp_attr=[]
 		attr=get_all_attributes(table)
 		for i in invalid_dfs:
@@ -449,30 +451,51 @@ def decompose(table,invalid_dfs):
 		database = input("Enter the name of the database you want to export new tables to: ")
 		connection = sqlite3.connect(database + '.db')
 		cursor=config.connection.cursor()
-		cursor.execute("""SELECT * FROM {}""".format(table,))
+		cursor.execute("SELECT * FROM {}".format(table,))
 		copy_data=cursor.fetchall()
 		
 		#create a copy of table being decomposed and delete it from original database
-		cursor.execute("""select sql from sqlite_master where type = 'table' and name = '{}'""".format(table,))
+		cursor.execute("select sql from sqlite_master where type = 'table' and name = '{}'".format(table,))
 		schema=cursor.fetchone()
-		cursor.execute("""DROP TABLE {}""".format(table,))
+		cursor.execute("DROP TABLE {}".format(table,))
+		cursor.execute("SELECT * FROM FuncDep WHERE table_name='{}'".format(table,))
+		dfs=cursor.fetchall()
+		
+		cursor.execute("DELETE FROM FuncDep WHERE table_name='{}'".format(table,))
+		
 		cursor=connection.cursor()
 		
-		#copy the table to the second database
+		#move functional dependancies to another database
+		cursor.execute("CREATE TABLE FuncDep ('table_name' text, 'lhs' text, 'rhs' text)")
+		
+		#copy the original table (violating 3NF) to the second database
 		cursor.execute(schema[0])
 		for i in copy_data:
-			cursor.execute("""INSERT INTO {} VALUES {}""".format(table,i))
+			cursor.execute("INSERT INTO {} VALUES {}".format(table,i))
 		connection.commit()	
 		
-		cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"BCNF1",s,table))	
+		#create the first table - use all attributes non-present in invalid_dfs' rhs
+		cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"3NF1",s,table))
 		counter=1
 		for i in invalid_dfs:
 			counter+=1
 			tmp_attr=copy.deepcopy(i.lhs)
 			tmp_attr.extend(i.rhs)
 			s=convert_attr_to_string(tmp_attr)
-			cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"BCNF"+str(counter),s,table))
+			name=table+"3NF"+str(counter)
+			cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(name,s,table))
+			#update the new FuncDep table
+			cursor.execute("INSERT INTO FuncDep VALUES ('{}','{}','{}')".format(name,convert_lhs_to_string(i.lhs),i.rhs))
+			#remove invalid dependency from the set of all dependancies copied from old datbase
+			for j in dfs:
+				if j[1]==convert_lhs_to_string(i.lhs) and j[2]==i.rhs:
+					dfs.remove(j)
 		
+		#insert all remaining dfs into the new FuncDep table
+		for i in dfs:
+			cursor.execute("INSERT INTO FuncDep VALUES ('{}','{}','{}')".format(table+"BCNF1",i[1],i[2]))
+		
+		#delete the copy of the original table after it has been decomposed
 		cursor.execute("DROP TABLE {}".format(table,))	
 		cursor=config.connection.cursor()
 		connection.commit()
@@ -480,8 +503,3 @@ def decompose(table,invalid_dfs):
 		config.connection.commit()
 			
 		
-			
-			
-			
-			
-			
