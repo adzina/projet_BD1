@@ -228,10 +228,8 @@ def find_super_keys_from_pk(pk,table_name):
 """
 To determine the primary key, the algoritm divises arguments into two categories:
 left and middle.
-
 left - attributes that never occur on the rhs of a DF
 middle - attribute that can be found in both rhs and lhs 
-
 Algorithm starts with the left set and adds to it only those middle attributes which cannot be defined by argument already in left set
 """		
 def sort_into_left_and_middle(attr,df_of_this_table):
@@ -255,7 +253,7 @@ def sort_into_left_and_middle(attr,df_of_this_table):
 				in_right=True
 		if (in_left and in_right):
 			middle.append(attr[i])
-		elif(in_left and not in_right):
+		elif(not in_right):
 			left.append(attr[i])
 		in_left=False
 		in_right=False
@@ -412,17 +410,6 @@ def isIncluded(array1, array2):
 		
 		
 
-"""
-3NF: 1.iteruj po wszystkich df danej tabeli				done
-	 2. sprawdz czy:
-		lhs jest super keys
-		lub
-		rhs jest w ktoryms z candidate key				done
-	 3. zapisz df, dla których nie jest to spełnione  	done
-	 4. oblicz dekompozycje tabeli
-	 5. eksportuj do nowej bazy danych
-	 6. zapisz df w FuncDep
-"""	
 def verify3NF(table):
 		"""Verify whether a table is in 3NF
 			:param table: name of a table
@@ -439,67 +426,68 @@ def verify3NF(table):
 			if(set(i.lhs) not in sk and i.rhs not in primary_attr): 
 				invalid_dfs.append(i)
 		return invalid_dfs
+
+#Proposition 9. page 47	
+
+def decompose(table):
+	if(len(verify3NF(table))==0):
+		print("This table is already in 3NF\n")
+		return 0
+	
+	pk=find_primary_key(table)
 		
-def decompose(table,invalid_dfs):
+	df_of_this_table=functions_1.getDFs(table)
+	database = input("Enter the name of the database you want to export new tables to: ")
+	connection = sqlite3.connect(database + '.db')
+	cursor=config.connection.cursor()
+	cursor.execute("SELECT * FROM {}".format(table,))
+	#copy of data contained in the original table
+	copy_data=cursor.fetchall()
+	
+	#create a copy of table being decomposed and delete it from original database
+	cursor.execute("select sql from sqlite_master where type = 'table' and name = '{}'".format(table,))
+	schema=cursor.fetchone()
+	cursor.execute("DROP TABLE {}".format(table,))
+	cursor.execute("SELECT * FROM FuncDep WHERE table_name='{}'".format(table,))
+	dfs=cursor.fetchall()
+	#delete all functional dependancies connected to the table we are decomposing	
+	cursor.execute("DELETE FROM FuncDep WHERE table_name='{}'".format(table,))
 		
-		tmp_attr=[]
-		attr=get_all_attributes(table)
-		for i in invalid_dfs:
-			attr.remove(i.rhs)
-		s=convert_attr_to_string(attr)
+	cursor=connection.cursor()
+	#move functional dependancies to another database
+	cursor.execute("CREATE TABLE FuncDep ('table_name' text, 'lhs' text, 'rhs' text)")
 		
-		database = input("Enter the name of the database you want to export new tables to: ")
-		connection = sqlite3.connect(database + '.db')
-		cursor=config.connection.cursor()
-		cursor.execute("SELECT * FROM {}".format(table,))
-		copy_data=cursor.fetchall()
-		
-		#create a copy of table being decomposed and delete it from original database
-		cursor.execute("select sql from sqlite_master where type = 'table' and name = '{}'".format(table,))
-		schema=cursor.fetchone()
-		cursor.execute("DROP TABLE {}".format(table,))
-		cursor.execute("SELECT * FROM FuncDep WHERE table_name='{}'".format(table,))
-		dfs=cursor.fetchall()
-		
-		cursor.execute("DELETE FROM FuncDep WHERE table_name='{}'".format(table,))
-		
-		cursor=connection.cursor()
-		
-		#move functional dependancies to another database
-		cursor.execute("CREATE TABLE FuncDep ('table_name' text, 'lhs' text, 'rhs' text)")
-		
-		#copy the original table (violating 3NF) to the second database
-		cursor.execute(schema[0])
-		for i in copy_data:
-			cursor.execute("INSERT INTO {} VALUES {}".format(table,i))
-		connection.commit()	
-		
-		#create the first table - use all attributes non-present in invalid_dfs' rhs
+	#copy the original table (violating 3NF) to the second database
+	cursor.execute(schema[0])
+	for i in copy_data:
+		cursor.execute("INSERT INTO {} VALUES {}".format(table,i))
+	connection.commit()
+	
+	#we create a table containing the pk only if pk is not contained in lhs of some DF to avoid repetitions
+	flag=False
+	for i in df_of_this_table:
+		if(pk[0].issubset(set(i.lhs))):
+			flag=True
+	#create table containing only the pk	
+	if(not flag):
+		s=convert_attr_to_string(pk[0])
 		cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"3NF1",s,table))
-		counter=1
-		for i in invalid_dfs:
-			counter+=1
-			tmp_attr=copy.deepcopy(i.lhs)
-			tmp_attr.extend(i.rhs)
-			s=convert_attr_to_string(tmp_attr)
-			name=table+"3NF"+str(counter)
-			cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(name,s,table))
-			#update the new FuncDep table
-			cursor.execute("INSERT INTO FuncDep VALUES ('{}','{}','{}')".format(name,convert_lhs_to_string(i.lhs),i.rhs))
-			#remove invalid dependency from the set of all dependancies copied from old datbase
-			for j in dfs:
-				if j[1]==convert_lhs_to_string(i.lhs) and j[2]==i.rhs:
-					dfs.remove(j)
+
+	counter=1
+	for i in df_of_this_table:
+		counter+=1
+		tmp_attr=copy.deepcopy(i.lhs)
+		tmp_attr.extend(i.rhs)
+		s=convert_attr_to_string(tmp_attr)
+		name=table+"3NF"+str(counter)
+		cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(name,s,table))
+		#update the new FuncDep table
+		cursor.execute("INSERT INTO FuncDep VALUES ('{}','{}','{}')".format(name,convert_lhs_to_string(i.lhs),i.rhs))
 		
-		#insert all remaining dfs into the new FuncDep table
-		for i in dfs:
-			cursor.execute("INSERT INTO FuncDep VALUES ('{}','{}','{}')".format(table+"BCNF1",i[1],i[2]))
-		
-		#delete the copy of the original table after it has been decomposed
-		cursor.execute("DROP TABLE {}".format(table,))	
-		cursor=config.connection.cursor()
-		connection.commit()
-		connection.close()
-		config.connection.commit()
-			
-		
+	#delete the copy of the original table after it has been decomposed
+	cursor.execute("DROP TABLE {}".format(table,))	
+	cursor=config.connection.cursor()
+	connection.commit()
+	connection.close()
+	config.connection.commit()
+
