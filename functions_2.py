@@ -429,7 +429,7 @@ def verify3NF(table):
 
 #Proposition 9. page 47	
 
-def decompose(table):
+def decompose3NF(table):
 	if(len(verify3NF(table))==0):
 		print("This table is already in 3NF\n")
 		return 0

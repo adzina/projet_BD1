@@ -191,7 +191,11 @@ def runApp():
 		elif command == "Show LogicConseq":
 			showLogicalConsequence()
 		elif command == "isBCNF":
-			showBCNF()	
+			showBCNF()
+		elif command == "is3NF":
+			show3NF()
+		elif command == "decompose3NF":
+			decompose3NF()	
 		elif command == "Exit":
 			running = False
 			
@@ -226,6 +230,28 @@ def showBCNF():
 	"""
 	table_name=input("enter name of the table: ")
 	print(functions_2.verifyBCNF(table_name))
+def decompose3NF():
+	"""
+	Decompose a table
+	:return: None
+	"""
+	table_name=input("enter name of the table: ")
+	functions_2.decompose3NF(table_name)
+def showBCNF():
+	"""
+	Show if a schema is in 3NF
+	:return: None
+	"""
+	table_name=input("enter name of the table: ")
+	invalid_dfs=functions_2.verify_3NF(table_name)
+	if(len(invalid_dfs)==0):
+		print("this table is in 3NF\n")
+	else:
+		print("the following dfs violate the 3NF"):
+		for i in invalid_dfs:
+			print(i.print_me())
+		print("to decompose this table enter command 'decompose3NF'\n")
+	print(functions_2.verify_3NF(table_name))
 
 def close():	
 	"""
@@ -234,4 +260,4 @@ def close():
 	"""
 	config.connection.commit()
 	config.connection.close()
-			
+
