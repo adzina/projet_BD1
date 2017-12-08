@@ -295,11 +295,12 @@ def check_all_sets(left,middle,attr,df_of_this_table):
 					#closure covers all attributes of a table
 					list_pk.append(candidate)
 				tmp=set()
-		flag=True		
+		flag=True
 		for i in range(len(list_pk)):
-			for j in range(i+1,len(list_pk)):
-				if(list_pk[j].issubset(list_pk[i])):
-					flag=False
+			for j in range(len(list_pk)):
+				if(i!=j):
+					if(list_pk[j].issubset(list_pk[i])):
+						flag=False
 			if(flag==True):
 				minimal_pk.append(list_pk[i])
 			flag=True	
@@ -340,7 +341,8 @@ def find_primary_key(table_name):
 		#check_middles(left,middle,df_of_this_table)
 		#pk=left
 		if(set(attr).issubset(find_closure(set(left),df_of_this_table))):
-			return set(left)
+			pk.append(left)
+			return pk
 		else:	
 			pk=check_all_sets(left,middle,attr,df_of_this_table)
 			return pk	
@@ -481,11 +483,11 @@ def decompose3NF(table,connection):
 	#we create a table containing the pk only if pk is not contained in lhs of some DF to avoid repetitions
 	flag=False
 	for i in df_of_this_table:
-		if(pk.issubset(set(i.lhs))):
+		if(pk[0].issubset(set(i.lhs))):
 			flag=True
 	#create table containing only the pk	
 	if(not flag):
-		s=convert_attr_to_string(pk)
+		s=convert_attr_to_string(pk[0])
 
 		cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"3NF1",s,table))
 
