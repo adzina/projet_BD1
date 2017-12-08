@@ -459,7 +459,6 @@ def decompose3NF(table,connection):
 	pk=find_primary_key(table)
 		
 	df_of_this_table=functions_1.getDFs(table)
-	
 	cursor=config.connection.cursor()
 	cursor.execute("SELECT * FROM {}".format(table,))
 	#copy of data contained in the original table
@@ -473,6 +472,7 @@ def decompose3NF(table,connection):
 			
 	#copy the original table (violating 3NF) to the second database
 	cursor=connection.cursor()
+
 	cursor.execute(schema[0])
 	for i in copy_data:
 		cursor.execute("INSERT INTO {} VALUES {}".format(table,i))
@@ -486,6 +486,7 @@ def decompose3NF(table,connection):
 	#create table containing only the pk	
 	if(not flag):
 		s=convert_attr_to_string(pk)
+
 		cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"3NF1",s,table))
 
 	counter=1

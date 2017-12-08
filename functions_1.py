@@ -11,8 +11,8 @@ def init():
 	"""
 	
 	#user has to enter the name of the database
-	#database = input("Enter the name of the database : ")
-	database="database"
+	database = input("Enter the name of the database : ")
+	#database="database"
 	#creates a connection with the database
 	config.connection = sqlite3.connect(database + '.db')
 
@@ -246,6 +246,7 @@ def showBCNF():
 	"""
 	table_name=input("enter name of the table: ")
 	print(functions_2.verifyBCNF(table_name))
+	
 def decompose3NF(valid_tables,invalid_tables):
 	"""
 	Decompose schema
@@ -297,6 +298,7 @@ def show3NF():
 			decompose3NF(valid_tables,invalid_tables)
 	else:
 		print("this schema is in 3NF")
+	
 
 def close():	
 	"""
