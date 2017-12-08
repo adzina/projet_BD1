@@ -34,8 +34,6 @@ def init():
 		rhs=raw_data[i][2]
 		config.all_dfs.append(df.df(table_name,lhs,rhs))
 	#run the application until user wants to quit it
-	s=functions_2.verify3NF("test2")
-	print(functions_2.decompose("test2",s))
 	runApp()
 	
 def convert_lhs_to_array(lhs):
@@ -188,10 +186,16 @@ def runApp():
 			showInvalid()
 		elif command == "Delete invalid":
 			functions_2.delete_invalid_DFs()
+		elif command == "Show keys":
+			showKeys()
+		elif command == "Show superkeys":
+			showSuperkeys()
 		elif command == "Show LogicConseq":
 			showLogicalConsequence()
 		elif command == "isBCNF":
-			showBCNF()	
+			showBCNF()
+		elif command == "is3NF":
+			show3NF()
 		elif command == "Exit":
 			running = False
 			
@@ -210,6 +214,22 @@ def showInvalid():
 	else:
 		print("All DFs are satisfied")
 
+def showKeys():
+	"""
+	Show all candidate keys of a table
+	:return: None
+	"""
+	table_name=input("enter name of the table: ")
+	print(functions_2.find_primary_key(table_name))
+
+def showSuperkeys():
+	"""
+	Show all super keys of a table
+	:return: None
+	"""
+	table_name=input("enter name of the table: ")
+	print(functions_2.find_all_super_keys(table_name))
+
 def showLogicalConsequence():
 	"""
 	Show all the logical Consequence from the DF of a table
@@ -226,6 +246,57 @@ def showBCNF():
 	"""
 	table_name=input("enter name of the table: ")
 	print(functions_2.verifyBCNF(table_name))
+def decompose3NF(valid_tables,invalid_tables):
+	"""
+	Decompose schema
+	:return: None
+	"""
+	database = input("Enter the name of the database you want to export new tables to: ")
+	connection = sqlite3.connect(database + '.db')
+	
+	
+	cursor=connection.cursor()
+	#create table FuncDep in new database
+	cursor.execute("CREATE TABLE FuncDep ('table_name' text, 'lhs' text, 'rhs' text)")
+	connection.commit()
+	
+	for i in valid_tables:
+		functions_2.copy_table(i,connection)
+	for i in invalid_tables:
+		functions_2.decompose3NF(i,connection)
+	
+	connection.close()
+def getAllTables():
+	cursor=config.connection.cursor()
+	cursor.execute("select name from sqlite_master where type = 'table' and name!='FuncDep'")	
+	tables=cursor.fetchall()
+	return tables
+def show3NF():
+	"""
+	Show if a database is in 3NF
+	:return: None
+	"""
+	tables=getAllTables()
+	invalid_tables=[]
+	valid_tables=[]
+	for i in tables:
+		
+		invalid_dfs=functions_2.verify_3NF(i[0])
+		if(len(invalid_dfs)>0):
+			invalid_tables.append(i[0])
+			print("the following dfs in table {} violate the 3NF".format(i[0],))
+			for j in invalid_dfs:
+				print(j.print_me())
+		else:
+			valid_tables.append(i[0])
+
+	if(len(invalid_tables)>0):
+		
+		rep=input("decompose this schema? (y/n): ")
+		if(rep=='y'):
+			decompose3NF(valid_tables,invalid_tables)
+	else:
+		print("this schema is in 3NF")
 
 def close():	
 	"""
@@ -234,4 +305,4 @@ def close():
 	"""
 	config.connection.commit()
 	config.connection.close()
-			
+
