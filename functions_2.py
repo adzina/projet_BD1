@@ -146,7 +146,8 @@ def multi_delete(nrs):
 		"""
 		indexes = sorted(list(nrs), reverse=True)
 		for index in indexes:
-			del config.all_dfs[index]	
+			del config.all_dfs[index]
+				
 def convert_lhs_to_string(lhs):
 		"""
 		Convert lhs in list format to string
@@ -179,9 +180,9 @@ def findsubsets(S,m):
 	
 def find_all_super_keys(table_name):
 		"""
-		Find all super keys of a table
-		:param table_name: name of a table
-		:return sk_list: list of all super keys
+		Return all the super keys of a table
+		:param table_name: A table of the database
+		:return: A list of all the super keys
 		"""
 		sk_list=[]
 		tmp=set()
@@ -228,13 +229,13 @@ def find_super_keys_from_pk(pk,table_name):
 				sk=set()
 		return sk_list	
 		
-"""
-To determine the primary key, the algoritm divises arguments into two categories:
-left and middle.
-left - attributes that never occur on the rhs of a DF
-middle - attribute that can be found in both rhs and lhs 
-Algorithm starts with the left set and adds to it only those middle attributes which cannot be defined by argument already in left set
-"""		
+
+#To determine the primary key, the algoritm divises arguments into two categories:
+#left and middle.
+#left - attributes that never occur on the rhs of a DF
+#middle - attribute that can be found in both rhs and lhs 
+#Algorithm starts with the left set and adds to it only those middle attributes which cannot be defined by argument already in left set
+
 def sort_into_left_and_middle(attr,df_of_this_table):
 	"""
 	Sort attributes into two groups: left and middle

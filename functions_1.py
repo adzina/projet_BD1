@@ -10,6 +10,7 @@ def init():
 	:return: None
 	"""
 	
+	print(">>SGBD")
 	#user has to enter the name of the database
 	database = input("Enter the name of the database : ")
 	#database="database"
@@ -162,6 +163,11 @@ def getAttributes(table):
 	return attributes
 
 def canAdd(df):
+	"""
+	Check we can add a DF into a table
+	:param df: the DF that we want to add
+	:return: True if it's possible, False if not
+	"""
 	attributes = getAttributes(df.table_name)
 	if functions_2.isIncluded(df.lhs, attributes) == False or functions_2.isIncluded(df.rhs, attributes) == False :
 		return False
@@ -176,7 +182,11 @@ def runApp():
 	running = True
 	while running:
 		command = input("Enter your command : ")
-		if command == "Add":
+		if command == "Show tables":
+			showTables()
+		elif command == "Show DF":
+			showDF()
+		elif command == "Add":
 			add_DF()
 		elif command == "Delete":
 			delete_DF()
@@ -198,6 +208,10 @@ def runApp():
 			show3NF()
 		elif command == "Exit":
 			running = False
+		elif command == "Help":
+			help()
+		else:
+			print("Type Help to get the list of command\n")
 			
 def showInvalid():
 	"""
@@ -238,14 +252,6 @@ def showLogicalConsequence():
 	table_name=input("enter name of the table: ")
 	for f in functions_2.getLogicalConsequence(getDFs(table_name)):
 		print(f.print_me())
-		
-def showBCNF():
-	"""
-	Show if a schema is in BCNF
-	:return: None
-	"""
-	table_name=input("enter name of the table: ")
-	print(functions_2.verifyBCNF(table_name))
 	
 def decompose3NF(valid_tables,invalid_tables):
 	"""
@@ -267,6 +273,7 @@ def decompose3NF(valid_tables,invalid_tables):
 		functions_2.decompose3NF(i,connection)
 	
 	connection.close()
+	
 def getAllTables():
 	"""
 	Get all tables present in a schema
@@ -276,6 +283,25 @@ def getAllTables():
 	cursor.execute("select name from sqlite_master where type = 'table' and name!='FuncDep'")	
 	tables=cursor.fetchall()
 	return tables
+
+def showBCNF():
+	"""
+	Show if a schema is in BCNF
+	:return: None
+	"""
+	tables=getAllTables()
+	notBCNF = []
+	for t in tables:
+		if functions_2.verifyBCNF(t) == False:
+			notBCNF.append(t)
+	if len(notBCNF) > 0:
+		print("This schema is not in BCNF")
+		print("Cause of :")
+		for i in notBCNF:
+			print(i)
+	else:
+		print("This schema is in BCNF")
+	
 def show3NF():
 	"""
 	Show if a database is in 3NF
@@ -304,7 +330,43 @@ def show3NF():
 			printf("To decompose this schema, first remove invalid functional dependancies")
 	else:
 		print("this schema is in 3NF")
+		
+def showTables():
+	"""
+	Show all tables of a database
+	:return: None
+	"""
+	for table in getAllTables():
+		print(table)
+
+def showDF():
+	"""
+	Show all functionals dependencies of a table
+	:return: None
+	"""
+	table_name=input("enter name of the table: ")
+	for df in getDFs(table_name):
+		print(df.print_me())
 	
+def help():
+	"""
+	Show the list of commands
+	:return: None
+	"""
+	print("\nList of commands : \n")
+	print("Show tables : Show all the tables of a database")
+	print("Show DF : Show all the DF from a table")
+	print("Add : Add a functional dependencie to FuncDep")
+	print("Delete : Delete a functional dependencie from FuncDep")
+	print("Modify : Change a functional dependencie by an other")
+	print("Show invalid : Show all the invalid DF from FuncDep")
+	print("Delete invalid : Delete all the invalid DF from FuncDep")
+	print("Show LogicConseq : Show all the logicalConsequence")
+	print("isBCNF : Show if a table is in BCNF")
+	print("Show superkeys : Show all the super keys from a table")
+	print("Show keys : Show all the keys from a table")
+	print("is3NF : Show if a table is in 3NF")
+	print("Exit : Quit the application")
 
 def close():	
 	"""
