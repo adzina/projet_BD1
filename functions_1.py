@@ -21,9 +21,9 @@ def init():
 		cursor.execute("SELECT * FROM FuncDep")
 	except sqlite3.OperationalError:
 		cursor.execute("""CREATE TABLE FuncDep(
-							table_name text,
-							lhs text,
-							rhs text
+							'table_name' text,
+							'lhs' text,
+							'rhs' text
 			)""")
 	#commits changes	
 	config.connection.commit()	
@@ -268,6 +268,10 @@ def decompose3NF(valid_tables,invalid_tables):
 	
 	connection.close()
 def getAllTables():
+	"""
+	Get all tables present in a schema
+	:return: list of tables' names
+	"""
 	cursor=config.connection.cursor()
 	cursor.execute("select name from sqlite_master where type = 'table' and name!='FuncDep'")	
 	tables=cursor.fetchall()
@@ -292,10 +296,12 @@ def show3NF():
 			valid_tables.append(i[0])
 
 	if(len(invalid_tables)>0):
-		
-		rep=input("decompose this schema? (y/n): ")
-		if(rep=='y'):
-			decompose3NF(valid_tables,invalid_tables)
+		if(len(functions_2.show_all_DF_not_satisfied())==0):
+			rep=input("decompose this schema? (y/n): ")
+			if(rep=='y'):
+				decompose3NF(valid_tables,invalid_tables)
+		else:
+			printf("To decompose this schema, first remove invalid functional dependancies")
 	else:
 		print("this schema is in 3NF")
 	

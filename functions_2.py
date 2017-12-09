@@ -20,21 +20,9 @@ def show_all_DF_not_satisfied():
 def verify_DF_satisfied(df):
 	"""
 	Checks if a DF is satisfied.
-	:param df: A functional dependencie
+	:param df: A functional dependency
 	:return: True if the df is satisfied, False if not
 	"""			
-	   #Example:
-	   #df=(table_name="employee", lhs="name lastname" rhs="address")
-	   #df is satisfied for the following table:
-	   #employee| name	|	lastname	| address
-		#		Jack	 Sparrow		 London, Picadilly Circus 17
-		#		Ada		 Lovelace		 London, Fann Street 9
-		#
-		#but not by the following table:		
-		#employee| name	|	lastname	| address
-		#		 Jack	 Sparrow		 London, Picadilly Circus 17
-		#		 Ada	 Lovelace		 London, Fann Street 9
-		#		 Ada	 Lovelace		 London, Picadilly Circus 17
 		
 	cursor = config.connection.cursor()
 	#reads all the data from columns present in DF
@@ -160,11 +148,16 @@ def multi_delete(nrs):
 		for index in indexes:
 			del config.all_dfs[index]	
 def convert_lhs_to_string(lhs):
+		"""
+		Convert lhs in list format to string
+		:param lhs: lhs in form of a list
+		:return: lhs converted to string
+		"""
 		str=""
 		for i in range(len(lhs)):
 			str=lhs[i]+" "
 		return str
-		
+'''		
 def get_all_attributes(table_name):
 		"""Find names of all columns in a table
 			:param table_name: name of a table
@@ -175,7 +168,7 @@ def get_all_attributes(table_name):
 		#gets names of all columns in df's table
 		names = list(map(lambda x: x[0], cursor.description))
 		return names
-
+'''
 def findsubsets(S,m):
 		"""Find subsets of set
 			:param S: set
@@ -185,6 +178,11 @@ def findsubsets(S,m):
 		return set(itertools.combinations(S, m))
 	
 def find_all_super_keys(table_name):
+		"""
+		Find all super keys of a table
+		:param table_name: name of a table
+		:return sk_list: list of all super keys
+		"""
 		sk_list=[]
 		tmp=set()
 		pk=find_primary_key(table_name)
@@ -193,15 +191,20 @@ def find_all_super_keys(table_name):
 			sk_list.extend(sk)
 		sk_list=remove_repetitions(sk_list)	
 		return sk_list
-def remove_repetitions(table):
+def remove_repetitions(array):
+		"""
+		Remove repetitions in a list
+		:param array: list of elements
+		:return res: list of unique elements
+		"""
 		res=[]
 		flag=True
-		for i in range(len(table)):
-			for j in range(i+1,len(table)):
-				if(table[j].issubset(table[i]) and table[i].issubset(table[j])):
+		for i in range(len(array)):
+			for j in range(i+1,len(array)):
+				if(array[j].issubset(array[i]) and array[i].issubset(array[j])):
 					flag=False
 			if(flag==True):
-				res.append(table[i])
+				res.append(array[i])
 			else:
 				flag=True
 		return res		
@@ -212,7 +215,7 @@ def find_super_keys_from_pk(pk,table_name):
 		"""				
 		sk=set()
 		sk_list=[]
-		attr=get_all_attributes(table_name)
+		attr=functions_1.getAttributes(table_name)
 		other_args=set(attr).difference(pk)
 		sk_list.append(pk)
 		for i in range(len(other_args)):
@@ -258,23 +261,7 @@ def sort_into_left_and_middle(attr,df_of_this_table):
 		in_left=False
 		in_right=False
 	return (left,middle)
-'''
-def check_middles(left,middle,df_of_this_table):
-		flag=True
-		for i in range(len(middle)):
-			for j in range(len(df_of_this_table)):
-				for k in  range(len(df_of_this_table[j].lhs)):
-					if(df_of_this_table[j].rhs==middle[i] and df_of_this_table[j].lhs[k] in left):
-						flag=False
-				
-				if(flag==True):	
-					left.append(middle[i])
-					middle.pop(i)
-					(left,middle)=check_middles(left,middle,df_of_this_table)
-					return (left,middle)
-						
-		return(left,middle)
-'''		
+	
 def check_all_sets(left,middle,attr,df_of_this_table):
 		"""Verify all combinations of middle attributes with all left attributes to find those which closure is a full set of attributes
 			:param:left
@@ -330,7 +317,7 @@ def find_primary_key(table_name):
 		"""
 		df_of_this_table=[]
 		pk=[]
-		attr=get_all_attributes(table_name)
+		attr=functions_1.getAttributes(table_name)
 		
 		for i in range (len(config.all_dfs)):
 			if (table_name==config.all_dfs[i].table_name):
@@ -431,80 +418,97 @@ def verify_3NF(table):
 		return invalid_dfs
 
 def copy_table(table,connection):
-	#copy data from the table
-	cursor=config.connection.cursor()
-	cursor.execute("SELECT * FROM {}".format(table,))
-	copy_data=cursor.fetchall()
-	#copy dfs of this table
-	cursor.execute("SELECT * FROM FuncDep WHERE table_name='{}'".format(table,))
-	dfs=cursor.fetchall()
-	#copy schema of the table
-	cursor.execute("select sql from sqlite_master where type = 'table' and name = '{}'".format(table,))
-	schema=cursor.fetchone()
-	#open second database
-	cursor=connection.cursor()
-	#create a new table and fill it with data
-	cursor.execute(schema[0])
-	for i in copy_data:
-		cursor.execute("INSERT INTO {} VALUES {}".format(table,i))
-	#insert funcdeps to FuncDep table	
-	for i in dfs:
-		cursor.execute("INSERT INTO FuncDep VALUES {}".format(i))
-	connection.commit()
+		"""
+		Copy valid table to another database
+		:param table: table to be copied
+		:param connection: connection to the new database
+		:return: None
+		"""
+		#copy data from the table
+		cursor=config.connection.cursor()
+		cursor.execute("SELECT * FROM {}".format(table,))
+		copy_data=cursor.fetchall()
+		#copy dfs of this table
+		try:
+			cursor.execute("SELECT * FROM FuncDep WHERE table_name='{}'".format(table,))	
+			dfs=cursor.fetchall()
+		
+		except sqlite3.OperationalError:
+			dfs=None
+		#copy schema of the table
+		cursor.execute("select sql from sqlite_master where type = 'table' and name = '{}'".format(table,))
+		schema=cursor.fetchone()
+		#open second database
+		cursor=connection.cursor()
+		#create a new table and fill it with data
+		cursor.execute(schema[0])
+		for i in copy_data:
+			cursor.execute("INSERT INTO {} VALUES {}".format(table,i))
+		#insert funcdeps to FuncDep table	
+		for i in dfs:
+			cursor.execute("INSERT INTO FuncDep VALUES {}".format(i))
+		connection.commit()
 	
 #Proposition 9. page 47	
 def decompose3NF(table,connection):
-	if(len(verify_3NF(table))==0):
-		print("This table is already in 3NF\n")
-		return 0
-	
-	pk=find_primary_key(table)
+		"""
+		Decompose an invalid table to tables in 3NF while preserving the DFs.
+		Save the new tables in the new database
+		:param table: table to be decomposed
+		:param connection: connection to the new database
+		:return: None
+		"""
+		if(len(verify_3NF(table))==0):
+			print("This table is already in 3NF\n")
+			return 0
 		
-	df_of_this_table=functions_1.getDFs(table)
-	cursor=config.connection.cursor()
-	cursor.execute("SELECT * FROM {}".format(table,))
-	#copy of data contained in the original table
-	copy_data=cursor.fetchall()
-	
-	#create a copy of table being decomposed
-	cursor.execute("select sql from sqlite_master where type = 'table' and name = '{}'".format(table,))
-	schema=cursor.fetchone()
-	cursor.execute("SELECT * FROM FuncDep WHERE table_name='{}'".format(table,))
-	dfs=cursor.fetchall()
+		pk=find_primary_key(table)
 			
-	#copy the original table (violating 3NF) to the second database
-	cursor=connection.cursor()
-
-	cursor.execute(schema[0])
-	for i in copy_data:
-		cursor.execute("INSERT INTO {} VALUES {}".format(table,i))
-	connection.commit()
-	
-	#we create a table containing the pk only if pk is not contained in lhs of some DF to avoid repetitions
-	flag=False
-	for i in df_of_this_table:
-		if(pk[0].issubset(set(i.lhs))):
-			flag=True
-	#create table containing only the pk	
-	if(not flag):
-		s=convert_attr_to_string(pk[0])
-
-		cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"3NF1",s,table))
-
-	counter=1
-	for i in df_of_this_table:
-		counter+=1
-		tmp_attr=copy.deepcopy(i.lhs)
-		tmp_attr.extend(i.rhs)
-		s=convert_attr_to_string(tmp_attr)
-		name=table+"3NF"+str(counter)
-		cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(name,s,table))
-		#update the new FuncDep table
-		cursor.execute("INSERT INTO FuncDep VALUES ('{}','{}','{}')".format(name,convert_lhs_to_string(i.lhs),i.rhs))
+		df_of_this_table=functions_1.getDFs(table)
+		cursor=config.connection.cursor()
+		cursor.execute("SELECT * FROM {}".format(table,))
+		#copy of data contained in the original table
+		copy_data=cursor.fetchall()
 		
-	#delete the copy of the original table after it has been decomposed
-	cursor.execute("DROP TABLE {}".format(table,))	
-	cursor=config.connection.cursor()
-	connection.commit()
-	config.connection.commit()
+		#create a copy of table being decomposed
+		cursor.execute("select sql from sqlite_master where type = 'table' and name = '{}'".format(table,))
+		schema=cursor.fetchone()
+		cursor.execute("SELECT * FROM FuncDep WHERE table_name='{}'".format(table,))
+		dfs=cursor.fetchall()
+				
+		#copy the original table (violating 3NF) to the second database
+		cursor=connection.cursor()
+
+		cursor.execute(schema[0])
+		for i in copy_data:
+			cursor.execute("INSERT INTO {} VALUES {}".format(table,i))
+		connection.commit()
+		
+		#we create a table containing the pk only if pk is not contained in lhs of some DF to avoid repetitions
+		flag=False
+		for i in df_of_this_table:
+			if(pk[0].issubset(set(i.lhs))):
+				flag=True
+		#create table containing only the pk	
+		if(not flag):
+			s=convert_attr_to_string(pk[0])
+
+			cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(table+"3NF1",s,table))
+
+		counter=1
+		for i in df_of_this_table:
+			counter+=1
+			tmp_attr=copy.deepcopy(i.lhs)
+			tmp_attr.extend(i.rhs)
+			s=convert_attr_to_string(tmp_attr)
+			name=table+"3NF"+str(counter)
+			cursor.execute("CREATE TABLE {} AS SELECT {} FROM {}".format(name,s,table))
+			#update the new FuncDep table
+			cursor.execute("INSERT INTO FuncDep VALUES ('{}','{}','{}')".format(name,convert_lhs_to_string(i.lhs),i.rhs))
+			
+		#delete the copy of the original table after it has been decomposed
+		cursor.execute("DROP TABLE {}".format(table,))	
+		cursor=config.connection.cursor()
+		connection.commit()
+		config.connection.commit()
 
