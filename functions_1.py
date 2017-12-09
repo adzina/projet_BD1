@@ -352,6 +352,8 @@ def help():
 	:return: None
 	"""
 	print("\nList of commands : \n")
+	print("Show tables : Show all the tables of a database")
+	print("Show DF : Show all the DF from a table")
 	print("Add : Add a functional dependencie to FuncDep")
 	print("Delete : Delete a functional dependencie from FuncDep")
 	print("Modify : Change a functional dependencie by an other")
