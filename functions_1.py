@@ -14,6 +14,7 @@ def init():
 	#user has to enter the name of the database
 	database = input("Enter the name of the database : ")
 	#database="database"
+	print("Type 'Help' to see a list of available commands")
 	#creates a connection with the database
 	config.connection = sqlite3.connect(database + '.db')
 
@@ -355,16 +356,16 @@ def help():
 	"""
 	print("\nList of commands : \n")
 	print("Show tables : Show all the tables of a database")
-	print("Show DF : Show all the DF from a table")
-	print("Add : Add a functional dependencie to FuncDep")
-	print("Delete : Delete a functional dependencie from FuncDep")
-	print("Modify : Change a functional dependencie by an other")
+	print("Show DF : Show all the DF of a table")
+	print("Add : Add a functional dependency to FuncDep")
+	print("Delete : Delete a functional dependency from FuncDep")
+	print("Modify : Change a functional dependency")
 	print("Show invalid : Show all the invalid DF from FuncDep")
 	print("Delete invalid : Delete all the invalid DF from FuncDep")
 	print("Show LogicConseq : Show all the logicalConsequence")
+	print("Show superkeys : Show all the super keys of a table")
+	print("Show keys : Show all the candidate keys of a table")
 	print("isBCNF : Show if a table is in BCNF")
-	print("Show superkeys : Show all the super keys from a table")
-	print("Show keys : Show all the keys from a table")
 	print("is3NF : Show if a table is in 3NF")
 	print("Exit : Quit the application")
 
